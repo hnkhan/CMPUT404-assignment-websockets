@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 import flask
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, jsonify
 from flask_sockets import Sockets
 import gevent
 from gevent import queue
@@ -89,21 +89,26 @@ def hello():
 def read_ws(ws,client):
     '''A greenlet function that reads from the websocket and updates the world'''
     # XXX: TODO IMPLEMENT ME
-    while True:
-        recieve = ws.recieve()
-        if (recieve is not None):
-            packet = json.loads(recieve)
-            sendjson(packet)
-    return None
+    try:
+        while True:
+            recieve = ws.receive()
+            if (recieve is not None):
+                packet = json.loads(recieve)
+                sendjson(packet)
+    except Exception as e:
+        print(e)
 
 @sockets.route('/subscribe')
 def subscribe_socket(ws):
     '''Fufill the websocket URL of /subscribe, every update notify the
        websocket and read updates from the websocket '''
     # XXX: TODO IMPLEMENT ME
-    client = Client()
-    clients.append(client)
-    g = gevent(read_ws, ws, client)
+    try:
+        client = Client()
+        clients.append(client)
+        g = gevent.spawn(read_ws, ws, client)
+    except Exception as e:
+        print(e)
     try:
         while True:
             recieve = client.get()
@@ -114,7 +119,7 @@ def subscribe_socket(ws):
         clients.remove(client)
         gevent.kill(g)
 
-    return None
+    #return None
 
 
 # I give this to you, this is how you get the raw body/data portion of a post in flask
